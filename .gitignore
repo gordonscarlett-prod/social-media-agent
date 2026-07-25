@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+venv/
+.env
+
+# Google credentials (NEVER commit these)
+backend/google_credentials.json
+backend/google_token.json
+
+# Database and uploads (server-local data)
+backend/social_media.db
+backend/uploads/
+
+# Logs
+backend/backend_err.log
+backend/backend_out.log
+frontend/frontend_err.log
+frontend/frontend_out.log
+*.log
+
+# Frontend build output and dependencies
+frontend/node_modules/
+frontend/dist/
+
+# Windows
+desktop.ini
+Thumbs.db
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
