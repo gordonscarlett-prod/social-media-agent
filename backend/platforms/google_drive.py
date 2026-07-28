@@ -22,6 +22,7 @@ SOCIAL_MEDIA_FOLDER_ID = os.getenv(
 )
 CREDENTIALS_FILE = os.getenv("GOOGLE_CREDENTIALS_FILE", "google_credentials.json")
 TOKEN_FILE = os.getenv("GOOGLE_TOKEN_FILE", "google_token.json")
+CODE_VERIFIER_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "google_code_verifier.json")
 
 # drive.file      -> create/manage files the app uploads (used for Media Library "Get URL")
 # drive.readonly  -> browse/read any folder shared with the user (used for Resource Library)
@@ -162,6 +163,11 @@ def get_auth_url(redirect_uri: str) -> str:
         include_granted_scopes="true",
         prompt="consent",
     )
+    # Persist PKCE code_verifier so exchange_auth_code can use it
+    code_verifier = getattr(flow, "code_verifier", None)
+    if code_verifier:
+        with open(CODE_VERIFIER_FILE, "w") as f:
+            json.dump({"code_verifier": code_verifier}, f)
     return auth_url
 
 
@@ -174,6 +180,13 @@ def exchange_auth_code(code: str, redirect_uri: str) -> None:
         scopes=SCOPES,
         redirect_uri=redirect_uri,
     )
+    # Restore PKCE code_verifier if it was saved during get_auth_url
+    if os.path.exists(CODE_VERIFIER_FILE):
+        with open(CODE_VERIFIER_FILE, "r") as f:
+            data = json.load(f)
+        os.remove(CODE_VERIFIER_FILE)
+        if data.get("code_verifier"):
+            flow.code_verifier = data["code_verifier"]
     flow.fetch_token(code=code)
     creds = flow.credentials
     with open(TOKEN_FILE, "w") as f:
