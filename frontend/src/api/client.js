@@ -27,6 +27,9 @@ export const deleteMedia = (id) => api.delete(`/media/${id}`)
 export const getBlogPosts = () => api.get('/blog')
 export const createBlogPost = (data) => api.post('/blog', data)
 export const deleteBlogPost = (id) => api.delete(`/blog/${id}`)
+export const getBlogDriveLibrary = () => api.get('/blog/drive')
+export const getDriveFileText = (file_id, mime_type) =>
+  api.get('/library/file-text', { params: { file_id, mime_type } })
 
 // Platforms
 export const getPlatforms = () => api.get('/platforms')

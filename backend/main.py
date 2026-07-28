@@ -845,6 +845,60 @@ async def library_file_text(file_id: str, mime_type: Optional[str] = None):
 
 
 # ─────────────────────────────────────────────
+# Blog Drive Library
+# ─────────────────────────────────────────────
+
+@app.get("/api/blog/drive")
+async def blog_drive_library():
+    """
+    Return blog articles from Google Drive organized by category.
+    Looks for a 'Blog' subfolder inside the Social Media folder, then
+    treats each subfolder as a category containing article files.
+    """
+    from platforms.google_drive import list_drive_folder, SOCIAL_MEDIA_FOLDER_ID, is_authenticated, needs_reauth
+
+    if not is_authenticated():
+        detail = (
+            "Google Drive needs to be re-authorized. Visit /api/drive/auth."
+            if needs_reauth() else
+            "Google Drive not authenticated. Visit /api/drive/auth."
+        )
+        raise HTTPException(status_code=401, detail=detail)
+
+    try:
+        social_listing = list_drive_folder(SOCIAL_MEDIA_FOLDER_ID)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    blog_folder = next(
+        (f for f in social_listing["folders"] if f["name"].lower() == "blog"),
+        None,
+    )
+    if not blog_folder:
+        return {"blog_folder_id": None, "categories": [], "uncategorized": []}
+
+    try:
+        blog_listing = list_drive_folder(blog_folder["id"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    categories = []
+    for cat in sorted(blog_listing["folders"], key=lambda x: x["name"]):
+        try:
+            cat_listing = list_drive_folder(cat["id"])
+            articles = cat_listing["files"]
+        except Exception:
+            articles = []
+        categories.append({"id": cat["id"], "name": cat["name"], "articles": articles})
+
+    return {
+        "blog_folder_id": blog_folder["id"],
+        "categories": categories,
+        "uncategorized": blog_listing["files"],
+    }
+
+
+# ─────────────────────────────────────────────
 # Dashboard stats
 # ─────────────────────────────────────────────
 
